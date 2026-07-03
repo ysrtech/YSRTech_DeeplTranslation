@@ -15,6 +15,11 @@ class YSRTech_DeeplTranslation_Block_Adminhtml_Catalog_Category_TranslateButton
 {
     protected function _toHtml()
     {
+        $helper = Mage::helper('ysrtech_deepltranslation');
+        if (!$helper->isEnabled() || !$helper->isShowEditButtons() || !$helper->getApiKey()) {
+            return '';
+        }
+
         $defaultStore = Mage::app()->getDefaultStoreView();
         $storeOptions = '';
 

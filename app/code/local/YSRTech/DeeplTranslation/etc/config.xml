@@ -105,6 +105,7 @@
         <ysrtech_deepltranslation>
             <general>
                 <enabled>1</enabled>
+                <show_edit_buttons>1</show_edit_buttons>
                 <formality>prefer_more</formality>
                 <product_attributes>name,description,short_description</product_attributes>
                 <category_attributes>name,description,short_desc</category_attributes>

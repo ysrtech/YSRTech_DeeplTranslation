@@ -23,6 +23,11 @@ class YSRTech_DeeplTranslation_Model_Observer
             return;
         }
 
+        $helper = Mage::helper('ysrtech_deepltranslation');
+        if (!$helper->isEnabled() || !$helper->isShowEditButtons() || !$helper->getApiKey()) {
+            return;
+        }
+
         $transport = $observer->getEvent()->getTransport();
         $transport->setHtml($transport->getHtml() . $this->_buildModalHtml($block));
     }
@@ -190,6 +195,11 @@ HTML;
     {
         $block = $observer->getEvent()->getBlock();
         if (!($block instanceof Mage_Adminhtml_Block_Catalog_Category_Edit)) {
+            return;
+        }
+
+        $helper = Mage::helper('ysrtech_deepltranslation');
+        if (!$helper->isEnabled() || !$helper->isShowEditButtons() || !$helper->getApiKey()) {
             return;
         }
 

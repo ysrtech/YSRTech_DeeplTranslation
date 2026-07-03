@@ -1,7 +1,8 @@
 <?php
 class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
 {
-    const XML_PATH_ENABLED            = 'ysrtech_deepltranslation/general/enabled';
+    const XML_PATH_ENABLED             = 'ysrtech_deepltranslation/general/enabled';
+    const XML_PATH_SHOW_EDIT_BUTTONS   = 'ysrtech_deepltranslation/general/show_edit_buttons';
 
     // Cron config paths
     const XML_PATH_CRON_ENABLED        = 'ysrtech_deepltranslation/cron/enabled';
@@ -18,6 +19,14 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     public function isEnabled()
     {
         return Mage::getStoreConfigFlag(self::XML_PATH_ENABLED);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowEditButtons()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_SHOW_EDIT_BUTTONS);
     }
 
     /**

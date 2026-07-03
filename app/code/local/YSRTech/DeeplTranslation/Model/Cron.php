@@ -21,6 +21,15 @@ class YSRTech_DeeplTranslation_Model_Cron
             return $this;
         }
 
+        if (!$helper->getApiKey()) {
+            Mage::log(
+                'YSRTech DeepL Translation cron: no API key configured, skipping.',
+                Zend_Log::WARN,
+                YSRTech_DeeplTranslation_Model_Translator::LOG_FILE
+            );
+            return $this;
+        }
+
         if (!$helper->isCronEnabled()) {
             return $this;
         }
