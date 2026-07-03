@@ -17,6 +17,10 @@ class YSRTech_DeeplTranslation_Model_Cron
         /** @var YSRTech_DeeplTranslation_Helper_Data $helper */
         $helper = Mage::helper('ysrtech_deepltranslation');
 
+        if (!$helper->isEnabled()) {
+            return $this;
+        }
+
         if (!$helper->isCronEnabled()) {
             return $this;
         }

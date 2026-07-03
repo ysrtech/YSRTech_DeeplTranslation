@@ -1,6 +1,8 @@
 <?php
 class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
 {
+    const XML_PATH_ENABLED            = 'ysrtech_deepltranslation/general/enabled';
+
     // Cron config paths
     const XML_PATH_CRON_ENABLED        = 'ysrtech_deepltranslation/cron/enabled';
     const XML_PATH_CRON_EXPR           = 'ysrtech_deepltranslation/cron/cron_expr';
@@ -9,6 +11,14 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_FORMALITY          = 'ysrtech_deepltranslation/general/formality';
     const XML_PATH_PRODUCT_ATTRIBUTES = 'ysrtech_deepltranslation/general/product_attributes';
     const XML_PATH_CATEGORY_ATTRIBUTES = 'ysrtech_deepltranslation/general/category_attributes';
+
+    /**
+     * @return bool
+     */
+    public function isEnabled()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_ENABLED);
+    }
 
     /**
      * @return string

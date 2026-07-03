@@ -75,6 +75,12 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
         }
 
         $this->_helper  = Mage::helper('ysrtech_deepltranslation');
+
+        if (!$this->_helper->isEnabled()) {
+            $this->_output("DeepL Translation is disabled in configuration. Skipping.\n");
+            return $this;
+        }
+
         $this->_apiKey  = $this->_helper->getApiKey();
 
         $appEmulation = Mage::getSingleton('core/app_emulation');
