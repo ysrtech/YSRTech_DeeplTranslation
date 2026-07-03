@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<layout>
+    <!--
+        Inject the persistent "Translate with DeepL" category modal + button
+        into the full page footer on all category management pages.
+        This runs once on full page load and is never replaced by AJAX.
+    -->
+    <adminhtml_catalog_category_index>
+        <reference name="before_body_end">
+            <block type="ysrtech_deepltranslation/adminhtml_catalog_category_translateButton"
+                   name="ysrtech_deepl_cat_translate_button"/>
+        </reference>
+    </adminhtml_catalog_category_index>
+    <adminhtml_catalog_category_edit>
+        <reference name="before_body_end">
+            <block type="ysrtech_deepltranslation/adminhtml_catalog_category_translateButton"
+                   name="ysrtech_deepl_cat_translate_button"/>
+        </reference>
+    </adminhtml_catalog_category_edit>
+</layout>

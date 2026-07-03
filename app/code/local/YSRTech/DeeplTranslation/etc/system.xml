@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<config>
+    <sections>
+        <ysrtech_deepltranslation translate="label" module="ysrtech_deepltranslation">
+            <label>DeepL Translation</label>
+            <tab>service</tab>
+            <sort_order>300</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <general translate="label">
+                    <label>General Settings</label>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+
+                        <api_key translate="label comment">
+                            <label>DeepL API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>Your DeepL API key (free or pro). Get one at https://www.deepl.com/pro-api</comment>
+                        </api_key>
+
+                        <formality translate="label comment">
+                            <label>Formality</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ysrtech_deepltranslation/adminhtml_system_config_source_formality</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Controls the level of formality in translations. Not supported by all languages.</comment>
+                        </formality>
+
+                        <product_attributes translate="label comment">
+                            <label>Product Attributes to Translate</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>ysrtech_deepltranslation/adminhtml_system_config_source_productAttributes</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Select one or more text/textarea product attributes to translate.</comment>
+                        </product_attributes>
+
+                        <category_attributes translate="label comment">
+                            <label>Category Attributes to Translate</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>ysrtech_deepltranslation/adminhtml_system_config_source_categoryAttributes</source_model>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Select one or more text/textarea category attributes to translate.</comment>
+                        </category_attributes>
+
+                    </fields>
+                </general>
+
+                <cron translate="label">
+                    <label>Scheduled Translation (Cron)</label>
+                    <sort_order>20</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+
+                        <enabled translate="label comment">
+                            <label>Enable Cron</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>When enabled, translation runs automatically on the schedule below.</comment>
+                        </enabled>
+
+                        <cron_expr translate="label comment">
+                            <label>Cron Schedule</label>
+                            <frontend_type>text</frontend_type>
+                            <backend_model>ysrtech_deepltranslation/adminhtml_system_config_backend_cron</backend_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[Standard cron expression, e.g. <strong>0 2 * * *</strong> (daily at 02:00). Leave empty to disable scheduling. <a href="https://crontab.guru/" target="_blank">crontab.guru</a>]]></comment>
+                        </cron_expr>
+
+                    </fields>
+                </cron>
+
+                <initial_setup translate="label">
+                    <label>Initial Setup / Manual Translation</label>
+                    <sort_order>30</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+
+                        <run_translation translate="label">
+                            <label>Run Translation</label>
+                            <frontend_type>text</frontend_type>
+                            <frontend_model>ysrtech_deepltranslation/adminhtml_system_config_initialSetup</frontend_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </run_translation>
+
+                    </fields>
+                </initial_setup>
+
+            </groups>
+        </ysrtech_deepltranslation>
+    </sections>
+</config>
