@@ -32,9 +32,11 @@ class YSRTech_DeeplTranslation_Block_Adminhtml_System_Config_InitialSetup
             return '<p style="color:#999;">No non-default active store views found.</p>';
         }
 
-        $ajaxUrl = Mage::getUrl('ysrtech_deepl/translate/run');
-        $token   = md5(uniqid('ysrtech_deepl', true));
-        Mage::app()->getCache()->save('1', 'ysrtech_deepl_token_' . $token, array(), 3600);
+        // Admin route (form key + ACL), same as the product/category edit buttons. A frontend
+        // route cannot be used here: a URL built from the admin carries the admin store code and
+        // the standard router never matches for the admin store (404).
+        $ajaxUrl = Mage::getSingleton('adminhtml/url')->getUrl('adminhtml/deeplTranslate/run');
+        $formKey = Mage::getSingleton('core/session')->getFormKey();
 
         $confirmCat  = 'WARNING: This will translate ALL categories using your DeepL API quota, regardless of the auto_translate flag.\n\nThis can be costly for large catalogues. Continue?';
         $confirmProd = 'WARNING: This will translate ALL products using your DeepL API quota, regardless of the auto_translate flag.\n\nThis can be costly for large catalogues. Continue?';
@@ -86,7 +88,7 @@ class YSRTech_DeeplTranslation_Block_Adminhtml_System_Config_InitialSetup
 </div>
 <script type="text/javascript">
 //<![CDATA[
-var ysrtechDeeplToken = '{$token}';
+var ysrtechDeeplFormKey = '{$formKey}';
 window.ysrtechDeeplRun = function(type, batchOffset) {
     batchOffset = batchOffset || 0;
     var storeCode = $('ysrtech_deepl_store_select').value;
@@ -112,11 +114,10 @@ window.ysrtechDeeplRun = function(type, batchOffset) {
 
     new Ajax.Request('{$ajaxUrl}', {
         method:     'post',
-        parameters: { token: ysrtechDeeplToken, store_code: storeCode, type: type, batch_offset: batchOffset },
+        parameters: { form_key: ysrtechDeeplFormKey, store_code: storeCode, type: type, batch_offset: batchOffset },
         onSuccess: function(response) {
             try {
                 var json = response.responseText.evalJSON();
-                if (json.new_token) { ysrtechDeeplToken = json.new_token; }
                 output.innerHTML += (json.output || '') + '\\n';
                 output.scrollTop  = output.scrollHeight;
                 if (json.next_offset !== null && json.next_offset !== undefined) {

@@ -2,7 +2,7 @@
 <config>
     <modules>
         <YSRTech_DeeplTranslation>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </YSRTech_DeeplTranslation>
     </modules>
 
@@ -47,18 +47,6 @@
             </ysrtech_deepltranslation_setup>
         </resources>
     </global>
-
-    <frontend>
-        <routers>
-            <ysrtech_deepl>
-                <use>standard</use>
-                <args>
-                    <module>YSRTech_DeeplTranslation</module>
-                    <frontName>ysrtech_deepl</frontName>
-                </args>
-            </ysrtech_deepl>
-        </routers>
-    </frontend>
 
     <admin>
         <routers>

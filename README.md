@@ -63,6 +63,15 @@ Both products and categories get an `auto_translate` attribute (Yes/No, per stor
 
 ## Changelog
 
+### 1.0.4
+- **Config-page buttons post to the admin controller.** The *Manual Translation* buttons used a
+  frontend route (`ysrtech_deepl/translate/run`) with a one-time cache token. A URL built from
+  the admin carries the admin store code, and OpenMage's standard router never matches for the
+  admin store, so every click returned HTTP 404 (with or without a custom admin path). They now
+  post to `adminhtml/deeplTranslate/run`, form-key and ACL protected like the edit-page buttons;
+  that action accepts the four run types and the batch offset. The frontend controller, its
+  router and a dead duplicate controller are removed.
+
 ### 1.0.3
 - **Configurable queue flag**: *Queue Flag Attribute* (default `auto_translate`). A store
   migrating from Fballiano_FullCatalogTranslate can point it at `fb_translate` to keep the

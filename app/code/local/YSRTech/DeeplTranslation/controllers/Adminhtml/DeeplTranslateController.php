@@ -5,8 +5,11 @@
  * Handles AJAX requests from the Initial Setup panel in System > Configuration.
  *
  * Actions:
- *   run  – accepts POST params: store_code, type (categories|products)
- *          Returns JSON { "output": "..." }
+ *   run  – POST params: form_key, store_code,
+ *          type (categories_all|categories_flagged|products_all|products_flagged),
+ *          batch_offset (int, products are processed in batches)
+ *          Returns JSON { "output": "...", "next_offset": int|null }
+ *   translateCategory / translateProduct – single item, from the edit pages
  */
 class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_Adminhtml_Controller_Action
 {
@@ -28,7 +31,7 @@ class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_A
         $storeCode = trim((string)$this->getRequest()->getPost('store_code'));
         $type      = trim((string)$this->getRequest()->getPost('type'));
 
-        if (!$storeCode || !in_array($type, array('categories', 'products'))) {
+        if (!$storeCode || !in_array($type, array('categories_all', 'categories_flagged', 'products_all', 'products_flagged'))) {
             $response->setBody(Mage::helper('core')->jsonEncode(array(
                 'output' => 'Error: invalid parameters.',
             )));
@@ -60,9 +63,10 @@ class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_A
             return;
         }
 
-        set_time_limit(0);
+        set_time_limit(120);
 
-        $sourceCode = Mage::app()->getDefaultStoreView()->getCode();
+        $sourceCode  = $defaultStore->getCode();
+        $batchOffset = max(0, (int)$this->getRequest()->getPost('batch_offset'));
 
         ob_start();
 
@@ -74,15 +78,17 @@ class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_A
                 ->setStoreDest($storeCode)
                 ->setVerbose(true)
                 ->setDebugMode(false)
-                ->setDryRun(false);
+                ->setDryRun(false)
+                ->setBatchOffset($batchOffset);
 
-            if ($type === 'categories') {
-                // Translate ALL categories, ignore auto_translate flag
-                $translator
-                    ->setOnlyCategories(true)
-                    ->setAllCategories(true);
+            if ($type === 'categories_all') {
+                $translator->setOnlyCategories(true)->setAllCategories(true);
+            } elseif ($type === 'categories_flagged') {
+                $translator->setOnlyCategories(true)->setAllCategories(false);
+            } elseif ($type === 'products_all') {
+                $translator->setOnlyProducts(true)->setAllProducts(true);
             } else {
-                // Products only, respects auto_translate flag
+                // flagged products only
                 $translator->setOnlyProducts(true);
             }
 
@@ -93,10 +99,12 @@ class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_A
             Mage::logException($e);
         }
 
-        $output = ob_get_clean();
+        $output     = ob_get_clean();
+        $nextOffset = isset($translator) ? $translator->getNextOffset() : null;
 
         $response->setBody(Mage::helper('core')->jsonEncode(array(
-            'output' => $output ?: 'Completed with no output.',
+            'output'      => $output ?: 'Completed with no output.',
+            'next_offset' => $nextOffset,
         )));
     }
 
