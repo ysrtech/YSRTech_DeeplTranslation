@@ -190,12 +190,23 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
         $attributes      = $this->_helper->getAttributesToTranslate();
         $productAction   = Mage::getSingleton('catalog/product_action');
 
-        // Load all flagged products in one collection query
-        $collection = Mage::getModel('catalog/product')
-            ->getCollection()
-            ->setStoreId($this->_storeIdSource)
-            ->addAttributeToSelect($attributes)
-            ->addFieldToFilter('entity_id', array('in' => $productIds));
+        // Load all flagged products in one collection query. This runs under emulation of
+        // the source store view, i.e. a frontend context: with "Use Flat Catalog Product" on,
+        // the collection would read the flat table, which only holds attributes marked
+        // "used in product listing" (name, short_description...). description and the meta
+        // fields would then be missing and silently not translated. Force the EAV tables.
+        $flatHelper = Mage::helper('catalog/product_flat');
+        $flatHelper->disableFlatCollection();
+        try {
+            $collection = Mage::getModel('catalog/product')
+                ->getCollection()
+                ->setStoreId($this->_storeIdSource)
+                ->addAttributeToSelect($attributes)
+                ->addFieldToFilter('entity_id', array('in' => $productIds));
+            $collection->load();
+        } finally {
+            $flatHelper->resetFlatCollection();
+        }
 
         // Build a flat job list and parallel source-text array for batched DeepL call
         // $jobs[i]  = array(productId, attribute)

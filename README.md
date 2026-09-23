@@ -63,6 +63,14 @@ Both products and categories get an `auto_translate` attribute (Yes/No, per stor
 
 ## Changelog
 
+### 1.0.5
+- **description and meta fields were never translated on stores with the flat product catalog
+  enabled.** The product collection is loaded under emulation of the source store view, a
+  frontend context, so with *Use Flat Catalog Product* = Yes it read the flat table, which only
+  holds attributes marked "used in product listing". Every other configured attribute was
+  silently skipped by all three entry points (cron, config page, edit button). The collection
+  now forces the EAV tables via `catalog/product_flat` `disableFlatCollection()`.
+
 ### 1.0.4
 - **Config-page buttons post to the admin controller.** The *Manual Translation* buttons used a
   frontend route (`ysrtech_deepl/translate/run`) with a one-time cache token. A URL built from
