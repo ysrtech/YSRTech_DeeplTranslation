@@ -152,11 +152,11 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
     protected function _getFlaggedProductIds($storeIdDest)
     {
         $attributeId = Mage::getModel('catalog/entity_attribute')
-            ->loadByCode(Mage_Catalog_Model_Product::ENTITY, 'auto_translate')
+            ->loadByCode(Mage_Catalog_Model_Product::ENTITY, $this->_helper->getFlagAttributeCode())
             ->getId();
 
         if (!$attributeId) {
-            $this->_output("WARNING: product attribute 'auto_translate' not found – no products will be translated.\n");
+            $this->_output("WARNING: product attribute '{$this->_helper->getFlagAttributeCode()}' not found – no products will be translated.\n");
             return array();
         }
 
@@ -283,7 +283,7 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
             }
 
             // Clear the auto_translate flag on the dest store view
-            $attrData['auto_translate'] = 0;
+            $attrData[$this->_helper->getFlagAttributeCode()] = 0;
 
             if (!$this->getDryRun()) {
                 $productAction->updateAttributes(
@@ -291,6 +291,13 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
                     $attrData,
                     $this->_storeIdDest
                 );
+                // updateAttributes() does not regenerate URL rewrites, so a changed url_key
+                // would leave the store's product URL stale until the next full reindex.
+                // Refresh it now; with catalog/seo/save_rewrites_history on, the old path
+                // becomes a permanent redirect.
+                if (isset($attrData['url_key'])) {
+                    $this->_refreshProductRewrite($productId);
+                }
             }
 
             $this->_output(" OK\n");
@@ -432,11 +439,17 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
 
                 // Reset the auto_translate flag to No on the dest store view
                 try {
-                    $categoryDest->setData('auto_translate', 0);
-                    $categoryResource->saveAttribute($categoryDest, 'auto_translate');
+                    $categoryDest->setData($this->_helper->getFlagAttributeCode(), 0);
+                    $categoryResource->saveAttribute($categoryDest, $this->_helper->getFlagAttributeCode());
                 } catch (Exception $e) {
                     $this->_output("Error resetting auto_translate on category {$categoryId}: " . $e->getMessage() . "\n");
                     Mage::logException($e);
+                }
+
+                // saveAttribute() bypasses the URL rewrite indexer; refresh the category's
+                // rewrite (and its products' category paths) so the new url_key is live.
+                if (isset($translatedRow['url_key'])) {
+                    $this->_refreshCategoryRewrite($categoryId);
                 }
             }
 
@@ -447,11 +460,11 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
     protected function _getFlaggedCategoryIds($storeIdDest)
     {
         $attributeId = Mage::getModel('catalog/entity_attribute')
-            ->loadByCode(Mage_Catalog_Model_Category::ENTITY, 'auto_translate')
+            ->loadByCode(Mage_Catalog_Model_Category::ENTITY, $this->_helper->getFlagAttributeCode())
             ->getId();
 
         if (!$attributeId) {
-            $this->_output("WARNING: category attribute 'auto_translate' not found – no categories will be translated.\n");
+            $this->_output("WARNING: category attribute '{$this->_helper->getFlagAttributeCode()}' not found – no categories will be translated.\n");
             return array();
         }
 
@@ -545,6 +558,30 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
     }
 
     // ------------------------------------------------------------------
+    // URL rewrites
+    // ------------------------------------------------------------------
+
+    protected function _refreshProductRewrite($productId)
+    {
+        try {
+            Mage::getSingleton('catalog/url')->refreshProductRewrite($productId, $this->_storeIdDest);
+        } catch (Exception $e) {
+            $this->_output("Error refreshing URL rewrites for product {$productId}: " . $e->getMessage() . "\n");
+            Mage::logException($e);
+        }
+    }
+
+    protected function _refreshCategoryRewrite($categoryId)
+    {
+        try {
+            Mage::getSingleton('catalog/url')->refreshCategoryRewrite($categoryId, $this->_storeIdDest);
+        } catch (Exception $e) {
+            $this->_output("Error refreshing URL rewrites for category {$categoryId}: " . $e->getMessage() . "\n");
+            Mage::logException($e);
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Batch helpers
     // ------------------------------------------------------------------
 
@@ -564,7 +601,8 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
 
     protected function _output($message)
     {
-        Mage::log(rtrim($message), Zend_Log::INFO, self::LOG_FILE);
+        // Forced: the store's Developer > Log Settings level would otherwise drop INFO lines.
+        Mage::log(rtrim($message), Zend_Log::INFO, self::LOG_FILE, true);
         if ($this->getVerbose()) {
             echo $message;
         }

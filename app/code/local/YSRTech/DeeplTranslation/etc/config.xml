@@ -2,7 +2,7 @@
 <config>
     <modules>
         <YSRTech_DeeplTranslation>
-            <version>1.0.1</version>
+            <version>1.0.3</version>
         </YSRTech_DeeplTranslation>
     </modules>
 
@@ -109,6 +109,7 @@
                 <formality>prefer_more</formality>
                 <product_attributes>name,description,short_description</product_attributes>
                 <category_attributes>name,description,short_desc</category_attributes>
+                <flag_attribute>auto_translate</flag_attribute>
             </general>
             <cron>
                 <enabled>0</enabled>

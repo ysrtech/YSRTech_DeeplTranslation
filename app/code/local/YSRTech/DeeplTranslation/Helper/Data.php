@@ -12,6 +12,7 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_FORMALITY          = 'ysrtech_deepltranslation/general/formality';
     const XML_PATH_PRODUCT_ATTRIBUTES = 'ysrtech_deepltranslation/general/product_attributes';
     const XML_PATH_CATEGORY_ATTRIBUTES = 'ysrtech_deepltranslation/general/category_attributes';
+    const XML_PATH_FLAG_ATTRIBUTE      = 'ysrtech_deepltranslation/general/flag_attribute';
 
     /**
      * @return bool
@@ -36,6 +37,19 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $encrypted = Mage::getStoreConfig(self::XML_PATH_API_KEY);
         return $encrypted ? Mage::helper('core')->decrypt($encrypted) : '';
+    }
+
+    /**
+     * Attribute code of the per-store-view Yes/No flag that queues a product or category
+     * for translation (same code on both entities). Defaults to auto_translate; a store
+     * migrating from Fballiano_FullCatalogTranslate can keep using fb_translate.
+     *
+     * @return string
+     */
+    public function getFlagAttributeCode()
+    {
+        $code = trim((string) Mage::getStoreConfig(self::XML_PATH_FLAG_ATTRIBUTE));
+        return preg_match('/^[a-z0-9_]+$/', $code) ? $code : 'auto_translate';
     }
 
     /**

@@ -59,17 +59,32 @@ class YSRTech_DeeplTranslation_Model_Cron
             return $this;
         }
 
+        $sourceLanguage = substr((string) $defaultStore->getConfig('general/locale/code'), 0, 2);
         foreach ($destStores as $destCode) {
+            // A store view in the source language (e.g. a second website's Dutch view) has
+            // nothing to translate; DeepL would be asked for nl -> nl.
+            $destLanguage = substr((string) Mage::app()->getStore($destCode)->getConfig('general/locale/code'), 0, 2);
+            if ($destLanguage === $sourceLanguage) {
+                continue;
+            }
             try {
-                /** @var YSRTech_DeeplTranslation_Model_Translator $translator */
-                $translator = Mage::getModel('ysrtech_deepltranslation/translator');
-                $translator
-                    ->setStoreSource($sourceCode)
-                    ->setStoreDest($destCode)
-                    ->setDebugMode(false)
-                    ->setDryRun(false)
-                    ->setVerbose(false)
-                    ->run();
+                // The translator handles PRODUCT_BATCH_SIZE products per run() and reports the
+                // next offset; loop like the shell script does, or a cron run would only ever
+                // translate the first batch of each store view's queue.
+                $batchOffset = 0;
+                do {
+                    /** @var YSRTech_DeeplTranslation_Model_Translator $translator */
+                    $translator = Mage::getModel('ysrtech_deepltranslation/translator');
+                    $translator
+                        ->setStoreSource($sourceCode)
+                        ->setStoreDest($destCode)
+                        ->setDebugMode(false)
+                        ->setDryRun(false)
+                        ->setVerbose(false)
+                        ->setBatchOffset($batchOffset)
+                        ->run();
+                    $batchOffset = $translator->getNextOffset();
+                } while ($batchOffset !== null);
             } catch (Exception $e) {
                 Mage::log(
                     'YSRTech DeepL Translation cron error ('

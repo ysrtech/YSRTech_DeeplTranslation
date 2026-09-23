@@ -71,6 +71,15 @@
                             <comment>Select one or more text/textarea category attributes to translate.</comment>
                         </category_attributes>
 
+                        <flag_attribute translate="label comment">
+                            <label>Queue Flag Attribute</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>55</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment>Code of the Yes/No product and category attribute that marks an item for translation on a store view. Default auto_translate. Use fb_translate to keep the "Translate automatically?" checkbox from Fballiano Full Catalog Translate.</comment>
+                        </flag_attribute>
                         <show_edit_buttons translate="label comment">
                             <label>Show Translate Button on Edit Pages</label>
                             <frontend_type>select</frontend_type>

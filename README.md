@@ -60,3 +60,24 @@ Both products and categories get an `auto_translate` attribute (Yes/No, per stor
 - Magento 1.x / OpenMage LTS
 - PHP `curl` and `mbstring` extensions
 - A DeepL API key (Free or Pro)
+
+## Changelog
+
+### 1.0.3
+- **Configurable queue flag**: *Queue Flag Attribute* (default `auto_translate`). A store
+  migrating from Fballiano_FullCatalogTranslate can point it at `fb_translate` to keep the
+  existing "Translate automatically?" checkbox.
+- **Migration from Fballiano_FullCatalogTranslate**: `upgrade-1.0.1-1.0.2.php` copies existing
+  `fb_translate` flags (products and categories, all store views) into `auto_translate`;
+  `upgrade-1.0.2-1.0.3.php` then removes the `fb_translate` attributes, Fballiano's config rows
+  and its setup record. Both are no-ops on a store that never had Fballiano.
+- **URL rewrites refreshed after saving** a translated product or category, so a new `url_key`
+  is live immediately and (with *Create Permanent Redirect for old URL* on) the old path becomes
+  a 301. `catalog/product_action::updateAttributes()` and `saveAttribute()` skip the URL
+  rewrite indexer, so before this the store's URL stayed stale until a full reindex.
+- **Cron processes the whole queue**: the cron now loops over all product batches per store
+  view, like the shell script; previously one run stopped after the first 20 products.
+- **Cron skips destination store views in the source language** (e.g. a second website's
+  Dutch view when the default store view is Dutch).
+- **Log always written**: the module log is forced, so the store's Developer > Log Settings
+  level no longer drops its INFO lines.
