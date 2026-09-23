@@ -63,6 +63,14 @@ Both products and categories get an `auto_translate` attribute (Yes/No, per stor
 
 ## Changelog
 
+### 1.0.6
+- **Apply to All Store Views of the Same Language** (new option, default Yes): a translation
+  made for one store view is also saved to every other active store view whose locale is in the
+  same language (e.g. `en` and a second website's `ht-en`). The queue flag is reset and URL
+  rewrites are refreshed on each of them. Nothing is sent to DeepL twice, and the cron finds
+  those items already done when it reaches the sibling store view. The source store view is
+  never a target.
+
 ### 1.0.5
 - **description and meta fields were never translated on stores with the flat product catalog
   enabled.** The product collection is loaded under emulation of the source store view, a

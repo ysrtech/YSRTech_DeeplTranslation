@@ -13,6 +13,7 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_PRODUCT_ATTRIBUTES = 'ysrtech_deepltranslation/general/product_attributes';
     const XML_PATH_CATEGORY_ATTRIBUTES = 'ysrtech_deepltranslation/general/category_attributes';
     const XML_PATH_FLAG_ATTRIBUTE      = 'ysrtech_deepltranslation/general/flag_attribute';
+    const XML_PATH_SAME_LANGUAGE       = 'ysrtech_deepltranslation/general/apply_same_language';
 
     /**
      * @return bool
@@ -50,6 +51,17 @@ class YSRTech_DeeplTranslation_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $code = trim((string) Mage::getStoreConfig(self::XML_PATH_FLAG_ATTRIBUTE));
         return preg_match('/^[a-z0-9_]+$/', $code) ? $code : 'auto_translate';
+    }
+
+    /**
+     * Whether a translation made for one store view is also written to every other active
+     * store view whose locale is in the same language (e.g. en and ht-en).
+     *
+     * @return bool
+     */
+    public function applyToSameLanguageStores()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_SAME_LANGUAGE);
     }
 
     /**

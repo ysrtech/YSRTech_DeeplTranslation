@@ -53,6 +53,14 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
     protected $_storeIdDest;
 
     /**
+     * Store views the translated values are written to: the destination store view plus,
+     * when "Apply to all store views of the same language" is on, every other active store
+     * view in the destination language.
+     * @var int[]
+     */
+    protected $_targetStoreIds = array();
+
+    /**
      * Offset for the next product batch, or null if all products have been processed.
      * @var int|null
      */
@@ -130,6 +138,20 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
         $this->_storeIdSource = Mage::app()->getStore()->getId();
         $this->_langSource    = substr(Mage::app()->getLocale()->getLocaleCode(), 0, 2);
 
+        $this->_targetStoreIds = $this->_resolveTargetStoreIds();
+        if (count($this->_targetStoreIds) > 1) {
+            $codes = array();
+            foreach ($this->_targetStoreIds as $storeId) {
+                if ($storeId != $this->_storeIdDest) {
+                    $codes[] = Mage::app()->getStore($storeId)->getCode();
+                }
+            }
+            $this->_output(sprintf(
+                "Translations for %s are also written to the same-language store view(s): %s\n",
+                $this->getStoreDest(), implode(', ', $codes)
+            ));
+        }
+
         // Translate categories and/or products depending on flags
         if (!$this->getOnlyProducts()) {
             $this->_translateCategories();
@@ -143,6 +165,32 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
         $this->_output("DeepL translation run completed.\n");
 
         return $this;
+    }
+
+    /**
+     * The destination store view, plus every other active store view whose locale language
+     * equals the destination language when the option is on. The source store view is never
+     * a target.
+     *
+     * @return int[]
+     */
+    protected function _resolveTargetStoreIds()
+    {
+        $ids = array((int)$this->_storeIdDest);
+        if (!$this->_helper->applyToSameLanguageStores()) {
+            return $ids;
+        }
+        foreach (Mage::app()->getStores() as $store) {
+            $storeId = (int)$store->getId();
+            if (!$store->getIsActive() || $storeId == $this->_storeIdDest || $storeId == $this->_storeIdSource) {
+                continue;
+            }
+            $language = substr((string)$store->getConfig('general/locale/code'), 0, 2);
+            if ($language === $this->_langDest) {
+                $ids[] = $storeId;
+            }
+        }
+        return $ids;
     }
 
     // ------------------------------------------------------------------
@@ -297,17 +345,15 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
             $attrData[$this->_helper->getFlagAttributeCode()] = 0;
 
             if (!$this->getDryRun()) {
-                $productAction->updateAttributes(
-                    array($productId),
-                    $attrData,
-                    $this->_storeIdDest
-                );
-                // updateAttributes() does not regenerate URL rewrites, so a changed url_key
-                // would leave the store's product URL stale until the next full reindex.
-                // Refresh it now; with catalog/seo/save_rewrites_history on, the old path
-                // becomes a permanent redirect.
-                if (isset($attrData['url_key'])) {
-                    $this->_refreshProductRewrite($productId);
+                foreach ($this->_targetStoreIds as $storeId) {
+                    $productAction->updateAttributes(array($productId), $attrData, $storeId);
+                    // updateAttributes() does not regenerate URL rewrites, so a changed url_key
+                    // would leave the store's product URL stale until the next full reindex.
+                    // Refresh it now; with catalog/seo/save_rewrites_history on, the old path
+                    // becomes a permanent redirect.
+                    if (isset($attrData['url_key'])) {
+                        $this->_refreshProductRewrite($productId, $storeId);
+                    }
                 }
             }
 
@@ -429,38 +475,41 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
             }
 
             if (!$this->getDryRun()) {
-                $categoryDest    = $categoryModel->setStoreId($this->_storeIdDest)->load($categoryId);
                 $categoryResource = Mage::getResourceModel('catalog/category');
 
                 // Attributes that are not real EAV columns and must be skipped
                 $skipAttrs = array('save_rewrites_history');
 
-                foreach ($translatedRow as $key => $value) {
-                    if (in_array($key, $skipAttrs)) {
-                        continue;
+                foreach ($this->_targetStoreIds as $storeId) {
+                    $categoryDest = $categoryModel->setStoreId($storeId)->load($categoryId);
+
+                    foreach ($translatedRow as $key => $value) {
+                        if (in_array($key, $skipAttrs)) {
+                            continue;
+                        }
+                        try {
+                            $categoryDest->setData($key, $value);
+                            $categoryResource->saveAttribute($categoryDest, $key);
+                        } catch (Exception $e) {
+                            $this->_output("Error saving attribute {$key} on category {$categoryId}: " . $e->getMessage() . "\n");
+                            Mage::logException($e);
+                        }
                     }
+
+                    // Reset the auto_translate flag to No on this store view
                     try {
-                        $categoryDest->setData($key, $value);
-                        $categoryResource->saveAttribute($categoryDest, $key);
+                        $categoryDest->setData($this->_helper->getFlagAttributeCode(), 0);
+                        $categoryResource->saveAttribute($categoryDest, $this->_helper->getFlagAttributeCode());
                     } catch (Exception $e) {
-                        $this->_output("Error saving attribute {$key} on category {$categoryId}: " . $e->getMessage() . "\n");
+                        $this->_output("Error resetting auto_translate on category {$categoryId}: " . $e->getMessage() . "\n");
                         Mage::logException($e);
                     }
-                }
 
-                // Reset the auto_translate flag to No on the dest store view
-                try {
-                    $categoryDest->setData($this->_helper->getFlagAttributeCode(), 0);
-                    $categoryResource->saveAttribute($categoryDest, $this->_helper->getFlagAttributeCode());
-                } catch (Exception $e) {
-                    $this->_output("Error resetting auto_translate on category {$categoryId}: " . $e->getMessage() . "\n");
-                    Mage::logException($e);
-                }
-
-                // saveAttribute() bypasses the URL rewrite indexer; refresh the category's
-                // rewrite (and its products' category paths) so the new url_key is live.
-                if (isset($translatedRow['url_key'])) {
-                    $this->_refreshCategoryRewrite($categoryId);
+                    // saveAttribute() bypasses the URL rewrite indexer; refresh the category's
+                    // rewrite (and its products' category paths) so the new url_key is live.
+                    if (isset($translatedRow['url_key'])) {
+                        $this->_refreshCategoryRewrite($categoryId, $storeId);
+                    }
                 }
             }
 
@@ -572,20 +621,20 @@ class YSRTech_DeeplTranslation_Model_Translator extends Varien_Object
     // URL rewrites
     // ------------------------------------------------------------------
 
-    protected function _refreshProductRewrite($productId)
+    protected function _refreshProductRewrite($productId, $storeId)
     {
         try {
-            Mage::getSingleton('catalog/url')->refreshProductRewrite($productId, $this->_storeIdDest);
+            Mage::getSingleton('catalog/url')->refreshProductRewrite($productId, $storeId);
         } catch (Exception $e) {
             $this->_output("Error refreshing URL rewrites for product {$productId}: " . $e->getMessage() . "\n");
             Mage::logException($e);
         }
     }
 
-    protected function _refreshCategoryRewrite($categoryId)
+    protected function _refreshCategoryRewrite($categoryId, $storeId)
     {
         try {
-            Mage::getSingleton('catalog/url')->refreshCategoryRewrite($categoryId, $this->_storeIdDest);
+            Mage::getSingleton('catalog/url')->refreshCategoryRewrite($categoryId, $storeId);
         } catch (Exception $e) {
             $this->_output("Error refreshing URL rewrites for category {$categoryId}: " . $e->getMessage() . "\n");
             Mage::logException($e);
