@@ -194,7 +194,7 @@ class YSRTech_DeeplTranslation_Adminhtml_DeeplTranslateController extends Mage_A
         )));
     }
 
-    protected function _isAllowed()
+    protected function _isAllowed(): bool
     {
         return Mage::getSingleton('admin/session')
             ->isAllowed('system/config/ysrtech_deepltranslation');
